@@ -40,7 +40,7 @@ Author: Martin Burtscher
 struct ECLgraph
 {
     int nodes;
-    int edges;
+    long long int edges;
     int *nindex;
     int *nlist;
     int *eweight;

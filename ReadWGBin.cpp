@@ -332,6 +332,10 @@ int main(int argc, char *argv[])
 
     std::cout << "Graph converted to ECL" << std:: endl;
 
+    std::cout << "Number of nodes: " << g.nodes << std::endl;
+    std::cout << "Number of edges: " << g.edges << std::endl;
+    
+
     writeECLgraph(g, graph_output);
     
     std::cout << "Graph written to EGR" <<std::endl;
