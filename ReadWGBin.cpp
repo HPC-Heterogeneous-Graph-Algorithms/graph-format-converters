@@ -309,11 +309,13 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
 
     uint64_t *edges = new uint64_t[edgesCount];
-    uint64_t *edgesParallel = new uint64_t[edgesCount];
+//    uint64_t *edgesParallel = new uint64_t[edgesCount];
     readEdgesParallel(edgesFile, edges, offsets, verticesCount, edgesCount, bytesPerVertexID);
-    readEdges(edgesFile, edgesParallel, offsets, verticesCount, edgesCount, bytesPerVertexID);
+//    readEdges(edgesFile, edgesParallel, offsets, verticesCount, edgesCount, bytesPerVertexID);
 
+    std::cout << "Edges Alloted" << std::endl;
 // Compare the two methods
+/*
 #pragma omp parallel for
     for (uint64_t i = 0; i < edgesCount; ++i)
     {
@@ -323,12 +325,17 @@ int main(int argc, char *argv[])
             std::cerr << "Error: Parallel and non-parallel methods do not match" << std::endl;
         }
     }
-
-    // printEdges(offsets, edges, verticesCount);
+*/
+    printEdges(offsets, edges, verticesCount);
 
     ECLgraph g = convertToECLgraph(offsets, edges, verticesCount, edgesCount);
 
+    std::cout << "Graph converted to ECL" << std:: endl;
+
     writeECLgraph(g, graph_output);
+    
+    std::cout << "Graph written to EGR" <<std::endl;
+
     freeECLgraph(g);
     return 0;
 }
