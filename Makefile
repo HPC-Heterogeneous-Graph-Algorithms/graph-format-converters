@@ -1,5 +1,5 @@
 JAVA_CLASS_FILES  := $(subst .java,.class,$(shell ls *.java))
-free_mem := $(shell echo `cat /proc/meminfo  | grep MemFree | cut -f2 -d: | xargs | cut -f1 -d' '`/1024/1024 | bc)
+free_mem := $(shell echo `cat /proc/meminfo  | grep MemFree | cut -f2 -d: | xargs | cut -f1 -d' '`/1024/1024 | "C:\msys64\usr\bin\bc.exe")
 
 all:JLIBS $(JAVA_CLASS_FILES)
 
@@ -38,14 +38,14 @@ JLIBS: FORCE
 	javac -cp jlibs/*: $<
 
 test:
-	@if [ ! -f data/network.graph ]; then \
+	@if [ ! -f data/eu-2005.graph ]; then \
 		mkdir -p data; \
 		echo -e "--------------------\n\033[1;34mDownloading gsh-2015\033[0;37m"; \
 		wget -P data "https://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/2014-03/webgraph/webgraph.graph"; \
 		wget -P data "https://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/2014-03/webgraph/webgraph.properties"; \
 		echo -e "--------------------\n";\
 	fi
-	make WG2Bin args="data/network data"
+	make WG2Bin args="data/eu-2005 data"
 
 clean: 
 	rm -f *.class jlibs.zip

@@ -95,6 +95,33 @@ std::vector<uint64_t> readOffsets(const std::string &filename, uint64_t vertices
     return offsets;
 }
 
+
+// Reads offsets from the binary file 'offsetsFile' into the preallocated array 'nindex'.
+// The file is assumed to contain (verticesCount + 1) offsets of type int.
+void readOffsets(const std::string &offsetsFile, uint64_t verticesCount, int64_t *nindex) {
+    // Open the file in binary mode.
+    std::ifstream file(offsetsFile, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error: Unable to open offsets file " << offsetsFile << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    // Calculate the total number of bytes to read.
+    int64_t bytesToRead = (verticesCount + 1) * sizeof(int64_t);
+
+    // Read the data into the provided array.
+    file.read(reinterpret_cast<char*>(nindex), bytesToRead);
+    if (!file) {
+        std::cerr << " Error: Only " << file.gcount() 
+                  << " bytes could be read from " << offsetsFile 
+                  << " (expected " << bytesToRead << " bytes)." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    file.close();
+}
+
+
 void readEdges(const std::string &filename, uint64_t *edges, std::vector<uint64_t> &offsets, uint64_t verticesCount, uint64_t edgesCount, int bytesPerVertexID)
 {
     std::ifstream file(filename, std::ios::binary);
@@ -278,7 +305,7 @@ ECLgraph convertToECLgraph(const std::vector<uint64_t> &offsets, const uint64_t 
 
 int main(int argc, char *argv[])
 {
-    uint64_t verticesCount, edgesCount;
+    long long int verticesCount,edgesCount;
     int bytesPerVertexID;
     std::string offsetsFile, edgesFile;
 
@@ -293,7 +320,15 @@ int main(int argc, char *argv[])
     std::cout << "Offsets File: " << offsetsFile << std::endl;
     std::cout << "Edges File: " << edgesFile << std::endl;
 
-    std::vector<uint64_t> offsets = readOffsets(offsetsFile, verticesCount);
+    ECLgraph g;
+    g.nodes = verticesCount;
+    g.edges = edgesCount;
+    g.nindex = (long long *)malloc(verticesCount + 1, sizeof(g.nindex[0]));
+    g.nlist = (int *)malloc(edgesCount * sizeof(g.nlist[0]));
+
+    readOffsets(offsetsFile, verticesCount, g.nindex);
+
+    // std::vector<uint64_t> offsets = readOffsets(offsetsFile, verticesCount);
 
     std::cout << "Offsets: ";
     int count = 0;
@@ -308,11 +343,10 @@ int main(int argc, char *argv[])
     }
     std::cout << std::endl;
 
-    uint64_t *edges = new uint64_t[edgesCount];
+    // uint64_t *edges = new uint64_t[edgesCount];
 //    uint64_t *edgesParallel = new uint64_t[edgesCount];
-    readEdgesParallel(edgesFile, edges, offsets, verticesCount, edgesCount, bytesPerVertexID);
+    readEdgesParallel(edgesFile,g.nlist, offsets, verticesCount, edgesCount, bytesPerVertexID);
 //    readEdges(edgesFile, edgesParallel, offsets, verticesCount, edgesCount, bytesPerVertexID);
-
     std::cout << "Edges Alloted" << std::endl;
 // Compare the two methods
 /*
@@ -328,9 +362,9 @@ int main(int argc, char *argv[])
 */
     printEdges(offsets, edges, verticesCount);
 
-    ECLgraph g = convertToECLgraph(offsets, edges, verticesCount, edgesCount);
+    // ECLgraph g = convertToECLgraph(offsets, edges, verticesCount, edgesCount);
 
-    std::cout << "Graph converted to ECL" << std:: endl;
+    // std::cout << "Graph converted to ECL" << std:: endl;
 
     std::cout << "Number of nodes: " << g.nodes << std::endl;
     std::cout << "Number of edges: " << g.edges << std::endl;

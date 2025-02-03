@@ -41,7 +41,7 @@ struct ECLgraph
 {
     int nodes;
     long long int edges;
-    int *nindex;
+    long long *nindex;
     int *nlist;
     int *eweight;
 };
@@ -49,7 +49,7 @@ struct ECLgraph
 ECLgraph readECLgraph(const char *const fname)
 {
     ECLgraph g;
-    int cnt;
+    long long int cnt;
 
     FILE *f = fopen(fname, "rb");
     if (f == NULL)
@@ -122,7 +122,7 @@ void writeECLgraph(const ECLgraph g, const char *const fname)
         fprintf(stderr, "ERROR: node or edge count too low\n\n");
         exit(-1);
     }
-    int cnt;
+    long long int cnt;
     FILE *f = fopen(fname, "wb");
     if (f == NULL)
     {
