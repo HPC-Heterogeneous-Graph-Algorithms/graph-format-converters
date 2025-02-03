@@ -3,13 +3,11 @@
 #include <string>
 #include <sstream>
 #include <cstdint>
-#include "ECLgraph.h"
+// #include "ECLgraph.h"
 #include <bits/stdc++.h>
 #include <omp.h>
-#include <iostream>
 #include <fstream>
 #include <vector>
-#include <omp.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -28,8 +26,80 @@ bytes-per-vertex-ID-in-edges-file:3
 offsets-file:cnr-2000_offsets.bin
 edges-file:cnr-2000_edges.bin
 */
+struct ECLgraph
+{
+    long long int nodes;
+    long long int edges;
+    long long int *nindex;
+    int *nlist;
+    int *eweight;
+};
 
-void processGraphProps(const std::string &filename, uint64_t &verticesCount, uint64_t &edgesCount, int &bytesPerVertexID, std::string &offsetsFile, std::string &edgesFile)
+void writeECLgraph(const ECLgraph g, const char *const fname)
+{
+    if ((g.nodes < 1) || (g.edges < 0))
+    {
+        fprintf(stderr, "ERROR: node or edge count too low\n\n");
+        exit(-1);
+    }
+    long long int cnt;
+    FILE *f = fopen(fname, "wb");
+    if (f == NULL)
+    {
+        fprintf(stderr, "ERROR: could not open file %s\n\n", fname);
+        exit(-1);
+    }
+    cnt = fwrite(&g.nodes, sizeof(g.nodes), 1, f);
+    if (cnt != 1)
+    {
+        fprintf(stderr, "ERROR: failed to write nodes\n\n");
+        exit(-1);
+    }
+    cnt = fwrite(&g.edges, sizeof(g.edges), 1, f);
+    if (cnt != 1)
+    {
+        fprintf(stderr, "ERROR: failed to write edges\n\n");
+        exit(-1);
+    }
+
+    cnt = fwrite(g.nindex, sizeof(g.nindex[0]), g.nodes + 1, f);
+    if (cnt != g.nodes + 1)
+    {
+        fprintf(stderr, "ERROR: failed to write neighbor index list\n\n");
+        exit(-1);
+    }
+    cnt = fwrite(g.nlist, sizeof(g.nlist[0]), g.edges, f);
+    if (cnt != g.edges)
+    {
+        fprintf(stderr, "ERROR: failed to write neighbor list\n\n");
+        exit(-1);
+    }
+    if (g.eweight != NULL)
+    {
+        cnt = fwrite(g.eweight, sizeof(g.eweight[0]), g.edges, f);
+        if (cnt != g.edges)
+        {
+            fprintf(stderr, "ERROR: failed to write edge weights\n\n");
+            exit(-1);
+        }
+    }
+    fclose(f);
+}
+
+void freeECLgraph(ECLgraph &g)
+{
+    if (g.nindex != NULL)
+        free(g.nindex);
+    if (g.nlist != NULL)
+        free(g.nlist);
+    if (g.eweight != NULL)
+        free(g.eweight);
+    g.nindex = NULL;
+    g.nlist = NULL;
+    g.eweight = NULL;
+}
+
+void processGraphProps(const std::string &filename, long long int &verticesCount, long long int  &edgesCount, int &bytesPerVertexID, std::string &offsetsFile, std::string &edgesFile)
 {
     std::ifstream file(filename);
     if (!file.is_open())
@@ -98,7 +168,7 @@ std::vector<uint64_t> readOffsets(const std::string &filename, uint64_t vertices
 
 // Reads offsets from the binary file 'offsetsFile' into the preallocated array 'nindex'.
 // The file is assumed to contain (verticesCount + 1) offsets of type int.
-void readOffsets(const std::string &offsetsFile, uint64_t verticesCount, int64_t *nindex) {
+void readOffsets(const std::string &offsetsFile, long long verticesCount, long long *nindex) {
     // Open the file in binary mode.
     std::ifstream file(offsetsFile, std::ios::binary);
     if (!file.is_open()) {
@@ -122,7 +192,7 @@ void readOffsets(const std::string &offsetsFile, uint64_t verticesCount, int64_t
 }
 
 
-void readEdges(const std::string &filename, uint64_t *edges, std::vector<uint64_t> &offsets, uint64_t verticesCount, uint64_t edgesCount, int bytesPerVertexID)
+void readEdges(const std::string &filename, int *edges, long long *offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
 {
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open())
@@ -133,15 +203,15 @@ void readEdges(const std::string &filename, uint64_t *edges, std::vector<uint64_
 
     std::vector<char> buffer(bytesPerVertexID);
 
-    uint64_t edgeIndex = 0;
-    for (uint64_t i = 0; i < verticesCount; ++i)
+    long long edgeIndex = 0;
+    for ( long long i = 0; i < verticesCount; ++i)
     {
-        uint64_t start = offsets[i];
-        uint64_t end = offsets[i + 1];
-        for (uint64_t j = start; j < end; ++j)
+        long long start = offsets[i];
+        long long end = offsets[i + 1];
+        for (long long j = start; j < end; ++j)
         {
             file.read(buffer.data(), bytesPerVertexID);
-            uint64_t target = 0;
+            long long target = 0;
             for (int k = 0; k < bytesPerVertexID; ++k)
             {
                 // cout << target << " ";
@@ -156,7 +226,7 @@ void readEdges(const std::string &filename, uint64_t *edges, std::vector<uint64_
     file.close();
 }
 
-void readEdgesParallel(const std::string &filename, uint64_t *edges, std::vector<uint64_t> &offsets, uint64_t verticesCount, uint64_t edgesCount, int bytesPerVertexID)
+void readEdgesParallel(const std::string &filename, int *edges, long long *offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
 {
     // Open the file once using POSIX open
     int fd = open(filename.c_str(), O_RDONLY);
@@ -175,7 +245,7 @@ void readEdgesParallel(const std::string &filename, uint64_t *edges, std::vector
         return;
     }
 
-    size_t fileSize = sb.st_size;
+    long long fileSize = sb.st_size;
 
     // Memory-map the file
     char *fileData = static_cast<char *>(mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE, fd, 0));
@@ -210,18 +280,18 @@ void readEdgesParallel(const std::string &filename, uint64_t *edges, std::vector
 
 // Parallel processing using OpenMP
 #pragma omp parallel for schedule(dynamic)
-    for (uint64_t i = 0; i < verticesCount; ++i)
+    for ( long long i = 0; i < verticesCount; ++i)
     {
-        uint64_t start = offsets[i];
-        uint64_t end = offsets[i + 1];
+         long long start = offsets[i];
+         long long end = offsets[i + 1];
 
         // Optional: Uncomment the line below for debugging thread assignments
         // #pragma omp critical
         // std::cout << "Thread: " << omp_get_thread_num() << ", Vertex: " << i << ", Start: " << start << ", End: " << end << std::endl;
 
-        for (uint64_t j = start; j < end; ++j)
+        for ( long long j = start; j < end; ++j)
         {
-            uint64_t pos = j * bytesPerVertexID;
+             long long pos = j * bytesPerVertexID;
 
             // Ensure we don't read beyond the file
             if (pos + bytesPerVertexID > fileSize)
@@ -231,7 +301,7 @@ void readEdgesParallel(const std::string &filename, uint64_t *edges, std::vector
                 continue;
             }
 
-            uint64_t target = 0;
+            int target = 0;
 
             // Efficiently convert bytes to uint64_t using precomputed shifts
             for (int k = 0; k < bytesPerVertexID; ++k)
@@ -251,14 +321,14 @@ void readEdgesParallel(const std::string &filename, uint64_t *edges, std::vector
     }
 }
 
-void printEdges(const std::vector<uint64_t> &offsets, const uint64_t *edges, uint64_t verticesCount)
+void printEdges(const long long *offsets, const int *edges, long long verticesCount)
 {
     int count = 0;
-    for (uint64_t i = 0; i < verticesCount; ++i)
+    for ( long long i = 0; i < verticesCount; ++i)
     {
-        uint64_t start = offsets[i];
-        uint64_t end = offsets[i + 1];
-        for (uint64_t j = start; j < end; ++j)
+         long long start = offsets[i];
+         long long end = offsets[i + 1];
+        for ( long long j = start; j < end; ++j)
         {
             std::cout << "Source: " << i << ", Target: " << edges[j] << std::endl;
             count++;
@@ -280,7 +350,7 @@ ECLgraph convertToECLgraph(const std::vector<uint64_t> &offsets, const uint64_t 
     ECLgraph g;
     g.nodes = verticesCount;
     g.edges = edgesCount;
-    g.nindex = (int *)calloc(verticesCount + 1, sizeof(int));
+    g.nindex = (long long int *)malloc((verticesCount + 1)*sizeof(long long int ));
     // g.nindex.resize(verticesCount + 1);
     g.nlist = (int *)malloc(edgesCount * sizeof(int));
     // g.nlist.resize(edgesCount);
@@ -323,7 +393,7 @@ int main(int argc, char *argv[])
     ECLgraph g;
     g.nodes = verticesCount;
     g.edges = edgesCount;
-    g.nindex = (long long *)malloc(verticesCount + 1, sizeof(g.nindex[0]));
+    g.nindex = (long long *)malloc((verticesCount + 1)* sizeof(g.nindex[0]));
     g.nlist = (int *)malloc(edgesCount * sizeof(g.nlist[0]));
 
     readOffsets(offsetsFile, verticesCount, g.nindex);
@@ -332,11 +402,11 @@ int main(int argc, char *argv[])
 
     std::cout << "Offsets: ";
     int count = 0;
-    for (const auto &offset : offsets)
+    for(int i=0;i<verticesCount+1;i++)
     {
-        std::cout << offset << " ";
+        std::cout << g.nindex[i] << " ";
         count++;
-        if (count > 10)
+        if(count > 10)
         {
             break;
         }
@@ -345,7 +415,7 @@ int main(int argc, char *argv[])
 
     // uint64_t *edges = new uint64_t[edgesCount];
 //    uint64_t *edgesParallel = new uint64_t[edgesCount];
-    readEdgesParallel(edgesFile,g.nlist, offsets, verticesCount, edgesCount, bytesPerVertexID);
+    readEdgesParallel(edgesFile,g.nlist, g.nindex, verticesCount, edgesCount, bytesPerVertexID);
 //    readEdges(edgesFile, edgesParallel, offsets, verticesCount, edgesCount, bytesPerVertexID);
     std::cout << "Edges Alloted" << std::endl;
 // Compare the two methods
@@ -360,7 +430,7 @@ int main(int argc, char *argv[])
         }
     }
 */
-    printEdges(offsets, edges, verticesCount);
+    printEdges(g.nindex, g.nlist, verticesCount);
 
     // ECLgraph g = convertToECLgraph(offsets, edges, verticesCount, edgesCount);
 

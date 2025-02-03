@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Folders
+./data/*
+data/*
+.vscode/*
+jlibs/*

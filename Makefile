@@ -1,5 +1,5 @@
 JAVA_CLASS_FILES  := $(subst .java,.class,$(shell ls *.java))
-free_mem := $(shell echo `cat /proc/meminfo  | grep MemFree | cut -f2 -d: | xargs | cut -f1 -d' '`/1024/1024 | "C:\msys64\usr\bin\bc.exe")
+free_mem := $(shell echo `cat /proc/meminfo  | grep MemFree | cut -f2 -d: | xargs | cut -f1 -d' '`/1024/1024 | bc)
 
 all:JLIBS $(JAVA_CLASS_FILES)
 
