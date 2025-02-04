@@ -49,17 +49,27 @@ void writeECLgraph(const ECLgraph g, const char *const fname)
         fprintf(stderr, "ERROR: could not open file %s\n\n", fname);
         exit(-1);
     }
+    else{
+        std::cout << "File opened" << std::endl;
+    }
     cnt = fwrite(&g.nodes, sizeof(g.nodes), 1, f);
     if (cnt != 1)
     {
         fprintf(stderr, "ERROR: failed to write nodes\n\n");
         exit(-1);
     }
+    else{
+        std::cout << "Number of Nodes written" << std::endl;
+    }
+
     cnt = fwrite(&g.edges, sizeof(g.edges), 1, f);
     if (cnt != 1)
     {
         fprintf(stderr, "ERROR: failed to write edges\n\n");
         exit(-1);
+    }
+    else{
+        std::cout << "Number of Edges written" << std::endl;
     }
 
     cnt = fwrite(g.nindex, sizeof(g.nindex[0]), g.nodes + 1, f);
@@ -68,21 +78,22 @@ void writeECLgraph(const ECLgraph g, const char *const fname)
         fprintf(stderr, "ERROR: failed to write neighbor index list\n\n");
         exit(-1);
     }
+    else{
+        std::cout << "Neighbor Index List written" << std::endl;
+    }
+
+    cout << g.nlist[g.edges-1] << " " << g.edges << endl;
     cnt = fwrite(g.nlist, sizeof(g.nlist[0]), g.edges, f);
     if (cnt != g.edges)
     {
         fprintf(stderr, "ERROR: failed to write neighbor list\n\n");
         exit(-1);
     }
-    if (g.eweight != NULL)
-    {
-        cnt = fwrite(g.eweight, sizeof(g.eweight[0]), g.edges, f);
-        if (cnt != g.edges)
-        {
-            fprintf(stderr, "ERROR: failed to write edge weights\n\n");
-            exit(-1);
-        }
+    else{
+        std::cout << "Neighbor List written" << std::endl;
     }
+    
+    sleep(10);
     fclose(f);
 }
 
@@ -412,7 +423,7 @@ int main(int argc, char *argv[])
         }
     }
     std::cout << std::endl;
-    for(int i=verticesCount;i>verticesCount-10;i--)
+    for(int i=verticesCount;i>verticesCount-30;i--)
     {
         std::cout << g.nindex[i] << " ";
     }
@@ -455,6 +466,6 @@ int main(int argc, char *argv[])
 
     sleep(10);
 
-    freeECLgraph(g);
+    // freeECLgraph(g);
     return 0;
 }
