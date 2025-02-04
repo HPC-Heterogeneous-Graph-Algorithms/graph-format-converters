@@ -412,6 +412,11 @@ int main(int argc, char *argv[])
         }
     }
     std::cout << std::endl;
+    for(int i=verticesCount;i>verticesCount-10;i--)
+    {
+        std::cout << g.nindex[i] << " ";
+    }
+     std::cout << std::endl;
 
     // uint64_t *edges = new uint64_t[edgesCount];
 //    uint64_t *edgesParallel = new uint64_t[edgesCount];
@@ -431,6 +436,10 @@ int main(int argc, char *argv[])
     }
 */
     printEdges(g.nindex, g.nlist, verticesCount);
+    for(long long i = edgesCount-1; i>=edgesCount-10;i--){
+        std::cout << g.nlist[i] << " ";
+    }
+    std::cout<<"\n";
 
     // ECLgraph g = convertToECLgraph(offsets, edges, verticesCount, edgesCount);
 
@@ -443,6 +452,8 @@ int main(int argc, char *argv[])
     writeECLgraph(g, graph_output);
     
     std::cout << "Graph written to EGR" <<std::endl;
+
+    sleep(10);
 
     freeECLgraph(g);
     return 0;
