@@ -30,85 +30,107 @@ struct ECLgraph
 {
     long long int nodes;
     long long int edges;
-    long long int *nindex;
-    int *nlist;
+    // long long int *nindex;
+    // int *nlist;
+    vector<long long int> nindex;
+    vector<int> nlist;
     int *eweight;
 };
 
-void writeECLgraph(const ECLgraph g, const char *const fname)
-{
-    if ((g.nodes < 1) || (g.edges < 0))
-    {
-        fprintf(stderr, "ERROR: node or edge count too low\n\n");
-        exit(-1);
-    }
-    long long int cnt;
-    FILE *f = fopen(fname, "wb");
-    if (f == NULL)
-    {
-        fprintf(stderr, "ERROR: could not open file %s\n\n", fname);
-        exit(-1);
-    }
-    else{
-        std::cout << "File opened" << std::endl;
-    }
-    cnt = fwrite(&g.nodes, sizeof(g.nodes), 1, f);
-    if (cnt != 1)
-    {
-        fprintf(stderr, "ERROR: failed to write nodes\n\n");
-        exit(-1);
-    }
-    else{
-        std::cout << "Number of Nodes written" << std::endl;
+void write_bin_to_file(const std::vector<long long int >& vertices, const std::vector<int>& edges, std::string filename) {
+    // filename += ".egr";
+    std::cout << "binary filename: " << filename << std::endl;
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile) {
+        std::cerr << "Error opening file for writing." << std::endl;
+        exit(EXIT_FAILURE);
     }
 
-    cnt = fwrite(&g.edges, sizeof(g.edges), 1, f);
-    if (cnt != 1)
-    {
-        fprintf(stderr, "ERROR: failed to write edges\n\n");
-        exit(-1);
-    }
-    else{
-        std::cout << "Number of Edges written" << std::endl;
-    }
+    // Writing sizes first for easy reading
+    size_t size = vertices.size();
+    outFile.write(reinterpret_cast<const char*>(&size), 8);
+    size = edges.size();
+    outFile.write(reinterpret_cast<const char*>(&size), 8);
 
-    cnt = fwrite(g.nindex, sizeof(g.nindex[0]), g.nodes + 1, f);
-    if (cnt != g.nodes + 1)
-    {
-        fprintf(stderr, "ERROR: failed to write neighbor index list\n\n");
-        exit(-1);
-    }
-    else{
-        std::cout << "Neighbor Index List written" << std::endl;
-    }
+    // Writing data
+    outFile.write(reinterpret_cast<const char*>(vertices.data()), vertices.size() * sizeof(long long int));
+    outFile.write(reinterpret_cast<const char*>(edges.data()), edges.size() * sizeof(int));
+}
 
-    cout << g.nlist[g.edges-1] << " " << g.edges << endl;
-    cnt = fwrite(g.nlist, sizeof(g.nlist[0]), g.edges, f);
-    if (cnt != g.edges)
-    {
-        fprintf(stderr, "ERROR: failed to write neighbor list\n\n");
-        exit(-1);
-    }
-    else{
-        std::cout << "Neighbor List written" << std::endl;
-    }
+// void writeECLgraph(const ECLgraph g, const char *const fname)
+// {
+//     if ((g.nodes < 1) || (g.edges < 0))
+//     {
+//         fprintf(stderr, "ERROR: node or edge count too low\n\n");
+//         exit(-1);
+//     }
+//     long long int cnt;
+//     FILE *f = fopen(fname, "wb");
+//     if (f == NULL)
+//     {
+//         fprintf(stderr, "ERROR: could not open file %s\n\n", fname);
+//         exit(-1);
+//     }
+//     else{
+//         std::cout << "File opened" << std::endl;
+//     }
+//     cnt = fwrite(&g.nodes, sizeof(g.nodes), 1, f);
+//     if (cnt != 1)
+//     {
+//         fprintf(stderr, "ERROR: failed to write nodes\n\n");
+//         exit(-1);
+//     }
+//     else{
+//         std::cout << "Number of Nodes written" << std::endl;
+//     }
+
+//     cnt = fwrite(&g.edges, sizeof(g.edges), 1, f);
+//     if (cnt != 1)
+//     {
+//         fprintf(stderr, "ERROR: failed to write edges\n\n");
+//         exit(-1);
+//     }
+//     else{
+//         std::cout << "Number of Edges written" << std::endl;
+//     }
+
+//     cnt = fwrite(g.nindex, sizeof(g.nindex[0]), g.nodes + 1, f);
+//     if (cnt != g.nodes + 1)
+//     {
+//         fprintf(stderr, "ERROR: failed to write neighbor index list\n\n");
+//         exit(-1);
+//     }
+//     else{
+//         std::cout << "Neighbor Index List written" << std::endl;
+//     }
+
+//     cout << g.nlist[g.edges-1] << " " << g.edges << endl;
+//     cnt = fwrite(g.nlist, sizeof(g.nlist[0]), g.edges, f);
+//     if (cnt != g.edges)
+//     {
+//         fprintf(stderr, "ERROR: failed to write neighbor list\n\n");
+//         exit(-1);
+//     }
+//     else{
+//         std::cout << "Neighbor List written" << std::endl;
+//     }
     
-    sleep(10);
-    fclose(f);
-}
+//     sleep(10);
+//     fclose(f);
+// }
 
-void freeECLgraph(ECLgraph &g)
-{
-    if (g.nindex != NULL)
-        free(g.nindex);
-    if (g.nlist != NULL)
-        free(g.nlist);
-    if (g.eweight != NULL)
-        free(g.eweight);
-    g.nindex = NULL;
-    g.nlist = NULL;
-    g.eweight = NULL;
-}
+// void freeECLgraph(ECLgraph &g)
+// {
+//     if (g.nindex != NULL)
+//         free(g.nindex);
+//     if (g.nlist != NULL)
+//         free(g.nlist);
+//     if (g.eweight != NULL)
+//         free(g.eweight);
+//     g.nindex = NULL;
+//     g.nlist = NULL;
+//     g.eweight = NULL;
+// }
 
 void processGraphProps(const std::string &filename, long long int &verticesCount, long long int  &edgesCount, int &bytesPerVertexID, std::string &offsetsFile, std::string &edgesFile)
 {
@@ -179,7 +201,7 @@ std::vector<uint64_t> readOffsets(const std::string &filename, uint64_t vertices
 
 // Reads offsets from the binary file 'offsetsFile' into the preallocated array 'nindex'.
 // The file is assumed to contain (verticesCount + 1) offsets of type int.
-void readOffsets(const std::string &offsetsFile, long long verticesCount, long long *nindex) {
+void readOffsets(const std::string &offsetsFile, long long verticesCount, vector<long long> &nindex) {
     // Open the file in binary mode.
     std::ifstream file(offsetsFile, std::ios::binary);
     if (!file.is_open()) {
@@ -191,7 +213,7 @@ void readOffsets(const std::string &offsetsFile, long long verticesCount, long l
     int64_t bytesToRead = (verticesCount + 1) * sizeof(int64_t);
 
     // Read the data into the provided array.
-    file.read(reinterpret_cast<char*>(nindex), bytesToRead);
+    file.read(reinterpret_cast<char*>(nindex.data()), bytesToRead);
     if (!file) {
         std::cerr << " Error: Only " << file.gcount() 
                   << " bytes could be read from " << offsetsFile 
@@ -203,7 +225,7 @@ void readOffsets(const std::string &offsetsFile, long long verticesCount, long l
 }
 
 
-void readEdges(const std::string &filename, int *edges, long long *offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
+void readEdges(const std::string &filename, vector<int> &edges, vector<long long int> &offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
 {
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open())
@@ -237,7 +259,7 @@ void readEdges(const std::string &filename, int *edges, long long *offsets, long
     file.close();
 }
 
-void readEdgesParallel(const std::string &filename, int *edges, long long *offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
+void readEdgesParallel(const std::string &filename, vector<int> &edges, vector<long long int> &offsets, long long verticesCount, long long edgesCount, int bytesPerVertexID)
 {
     // Open the file once using POSIX open
     int fd = open(filename.c_str(), O_RDONLY);
@@ -332,7 +354,7 @@ void readEdgesParallel(const std::string &filename, int *edges, long long *offse
     }
 }
 
-void printEdges(const long long *offsets, const int *edges, long long verticesCount)
+void printEdges(const vector<long long int> &offsets, const  vector<int>  &edges, long long verticesCount)
 {
     int count = 0;
     for ( long long i = 0; i < verticesCount; ++i)
@@ -361,10 +383,10 @@ ECLgraph convertToECLgraph(const std::vector<uint64_t> &offsets, const uint64_t 
     ECLgraph g;
     g.nodes = verticesCount;
     g.edges = edgesCount;
-    g.nindex = (long long int *)malloc((verticesCount + 1)*sizeof(long long int ));
-    // g.nindex.resize(verticesCount + 1);
-    g.nlist = (int *)malloc(edgesCount * sizeof(int));
-    // g.nlist.resize(edgesCount);
+    // g.nindex = (long long int *)malloc((verticesCount + 1)*sizeof(long long int ));
+    g.nindex.resize(verticesCount + 1);
+    // g.nlist = (int *)malloc(edgesCount * sizeof(int));
+    g.nlist.resize(edgesCount);
     g.eweight = NULL;
 
 #pragma omp parallel for
@@ -404,8 +426,10 @@ int main(int argc, char *argv[])
     ECLgraph g;
     g.nodes = verticesCount;
     g.edges = edgesCount;
-    g.nindex = (long long *)malloc((verticesCount + 1)* sizeof(g.nindex[0]));
-    g.nlist = (int *)malloc(edgesCount * sizeof(g.nlist[0]));
+    g.nindex.resize(verticesCount + 1);
+    g.nlist.resize(edgesCount);
+    // g.nindex = (long long *)malloc((verticesCount + 1)* sizeof(g.nindex[0]));
+    // g.nlist = (int *)malloc(edgesCount * sizeof(g.nlist[0]));
 
     readOffsets(offsetsFile, verticesCount, g.nindex);
 
@@ -460,7 +484,8 @@ int main(int argc, char *argv[])
     std::cout << "Number of edges: " << g.edges << std::endl;
     
 
-    writeECLgraph(g, graph_output);
+    // writeECLgraph(g, graph_output);
+    write_bin_to_file(g.nindex,g.nlist,graph_output);
     
     std::cout << "Graph written to EGR" <<std::endl;
 
