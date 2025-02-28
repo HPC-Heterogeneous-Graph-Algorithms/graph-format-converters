@@ -1,10 +1,10 @@
 #!/bin/bash
 # Converter executable
-CONVERTER="/home/graphwork/lokesh_IIITH/ECL-MST-Updated/converter/sym-to-single.o"
+CONVERTER="/home/lokesh/graph-format-converters/egr-single.o"
 
 # Input and output directories
-INDIR="/raid/graphwork/IIIT-H/egr-sym"
-OUTDIR="/raid/graphwork/IIIT-H/egr-single"
+INDIR="/home/resources/Graphs/egr/sym/"
+OUTDIR="/home/resources/Graphs/egr/single/"
 
 # Create output directory if it doesn't exist
 mkdir -p "$OUTDIR"

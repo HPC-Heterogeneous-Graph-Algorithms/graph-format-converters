@@ -1,9 +1,9 @@
 #!/bin/bash
 # Converter executable
-CONVERTER="/home/graphwork/lokesh_IIITH/ECL-MST-Updated/converter/c1.o"
+CONVERTER="/home/lokesh/graph-format-converters/mtx-egr.o"
 
 # Output directory for converted ECLgraph files
-OUTDIR="/raid/graphwork/IIIT-H/egr-sym"
+OUTDIR="/home/resources/Graphs/egr/sym/"
 
 # Create the output directory if it doesn't exist
 mkdir -p "$OUTDIR"
