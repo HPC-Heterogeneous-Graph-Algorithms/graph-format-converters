@@ -47,9 +47,9 @@ Convert [WebGraph BVGraph](https://webgraph.di.unimi.it/) compressed graphs from
      │                 │    │               │
  bvgraph_gen_offsets   │    │               │
      │ (generates      │    │               │
-     │  .offsets)       │    │               │
+     │  .offsets)      │    │               │
      │                 │    │               │
- bvgraph_to_mtx   bvgraph_to_bgr   WG2MTX    WG2BGR
+bvgraph_to_mt bvgraph_to_bgr WG2MTX       WG2BGR
      │                 │        │           │
      ▼                 ▼        ▼           ▼
   .mtx file        .bgr file  .mtx file  .bgr file
