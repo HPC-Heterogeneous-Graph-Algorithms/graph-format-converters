@@ -1,7 +1,23 @@
 JAVA_CLASS_FILES  := $(subst .java,.class,$(shell ls *.java))
 free_mem := $(shell echo `cat /proc/meminfo  | grep MemFree | cut -f2 -d: | xargs | cut -f1 -d' '`/1024/1024 | bc)
 
-all:JLIBS $(JAVA_CLASS_FILES)
+CXX = g++
+CXXFLAGS = -O3 -std=c++17 -fopenmp -Wall -Wextra
+LDFLAGS = -fopenmp
+
+all:JLIBS $(JAVA_CLASS_FILES) cpp
+
+# C++ targets (no Java dependency)
+cpp: bvgraph_to_mtx bvgraph_to_bgr bvgraph_gen_offsets
+
+bvgraph_to_mtx: bvgraph_to_mtx.cpp bvgraph_reader.h
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+
+bvgraph_to_bgr: bvgraph_to_bgr.cpp bvgraph_reader.h
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+
+bvgraph_gen_offsets: bvgraph_gen_offsets.cpp bvgraph_reader.h
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 WG2Bin: JLIBS WG2Bin.class	
 	@echo "args = " $(args)
@@ -37,6 +53,18 @@ JLIBS: FORCE
 	@echo -e "\n\033[1;34mCompiling $<\033[0;37m"
 	javac -cp jlibs/*: $<
 
+# Generate .offsets file — pure C++ (no Java needed)
+offsets: bvgraph_gen_offsets
+	./bvgraph_gen_offsets $(args)
+
+# C++ conversion: .graph → .mtx (no Java needed at runtime)
+convert-mtx: bvgraph_to_mtx
+	./bvgraph_to_mtx $(args)
+
+# C++ conversion: .graph → .bgr (no Java needed at runtime)
+convert-bgr: bvgraph_to_bgr
+	./bvgraph_to_bgr $(args)
+
 test:
 	@if [ ! -f data/eu-2005.graph ]; then \
 		mkdir -p data; \
@@ -47,8 +75,12 @@ test:
 	fi
 	make WG2Bin args="data/eu-2005 data"
 
+test-cpp: bvgraph_to_mtx bvgraph_to_bgr
+	./bvgraph_to_mtx data/eu-2005 data/eu-2005.mtx
+	./bvgraph_to_bgr data/eu-2005 data/eu-2005.bgr
+
 clean: 
-	rm -f *.class jlibs.zip
+	rm -f *.class jlibs.zip bvgraph_to_mtx bvgraph_to_bgr bvgraph_gen_offsets
 	touch *.java 
 
 touch:
