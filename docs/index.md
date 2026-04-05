@@ -25,7 +25,6 @@ Convert [WebGraph BVGraph](https://webgraph.di.unimi.it/) compressed graphs from
 - [How the C++ Decoder Works](#how-the-c-decoder-works)
 - [Downloading Graphs](#downloading-graphs)
 - [Validation & Benchmarks](#validation--benchmarks)
-- [GitHub Pages Setup](#github-pages-setup)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -100,81 +99,33 @@ The WebGraph Java libraries (`jlibs/` folder) are automatically downloaded on fi
 
 ## Input: BVGraph Format
 
-The [WebGraph BVGraph format](https://webgraph.di.unimi.it/) is a highly compressed graph representation developed by Paolo Boldi and Sebastiano Vigna. Each dataset consists of files sharing a common basename:
+The [WebGraph BVGraph format](https://webgraph.di.unimi.it/) is a highly compressed graph representation developed by Paolo Boldi and Sebastiano Vigna. It uses gamma, delta, and zeta codes with reference-based copy compression to achieve very compact storage of web graphs and social networks.
 
-### Required Files
+Each dataset consists of three files sharing a common basename:
 
 | File | Description |
 |------|-------------|
 | `<name>.graph` | Compressed bitstream containing all successor lists |
-| `<name>.properties` | Java properties file with graph metadata |
-| `<name>.offsets` | Gamma-coded bit positions for each node (enables random access) |
+| `<name>.properties` | Graph metadata: node/arc counts, compression parameters |
+| `<name>.offsets` | Bit positions for each node (enables random access & parallelism) |
 
-### The `.properties` File
-
-A text file with key-value pairs. Example (`eu-2005.properties`):
-
-```properties
-#BVGraph properties
-nodes=862664
-arcs=19235140
-windowsize=7
-maxrefcount=3
-minintervallength=4
-zetak=3
-compressionflags=
-graphclass=it.unimi.dsi.webgraph.BVGraph
-version=0
-```
-
-Key parameters:
-- **nodes / arcs**: Graph dimensions
-- **windowsize**: How many previous nodes can be referenced for copy-based compression (default: 7)
-- **maxrefcount**: Maximum reference chain length (default: 3)
-- **minintervallength**: Minimum length for interval encoding (default: 4; 0 = disabled)
-- **zetak**: Parameter k for ζ_k coding of residuals (default: 3)
-- **compressionflags**: Coding types for each component (empty = all defaults)
-
-### The `.offsets` File
-
-Contains gamma-coded deltas of bit positions. Entry `i` gives the bit offset in the `.graph` file where node `i`'s data begins. This file enables random access and parallel decoding.
-
-**Generate with C++ (no Java needed):**
+The `.offsets` file can be generated from the other two:
 ```bash
-./bvgraph_gen_offsets data/eu-2005
+./bvgraph_gen_offsets data/eu-2005      # C++ (no Java)
+# or: java -cp jlibs/*: it.unimi.dsi.webgraph.BVGraph data/eu-2005 -O
 ```
 
-**Or with Java:**
-```bash
-java -cp jlibs/*: it.unimi.dsi.webgraph.BVGraph data/eu-2005 -O
-```
-
-### BVGraph Compression Scheme
-
-Each node's successor list is encoded as:
-
-1. **Outdegree** — number of successors (gamma or delta coded)
-2. **Reference** — index of a previous node to copy from (0 = none; unary coded)
-3. **Copy blocks** — which parts of the referenced node's successors to copy/skip
-4. **Intervals** — contiguous ranges of successor IDs `[left, left+len)`
-5. **Residuals** — remaining scattered successors (gap-coded with ζ_k)
-
-Coding types used (configurable via `compressionflags`):
-
-| Coding | Description | Typical use |
-|--------|-------------|-------------|
-| **γ (gamma)** | Unary length prefix + binary value | Outdegree, blocks, intervals |
-| **δ (delta)** | Gamma length prefix + binary value | Alternative for any field |
-| **ζ_k (zeta)** | Parameterized code, good for power-law gaps | Residuals (default k=3) |
-| **Unary** | Count of zeros terminated by 1 | References |
+📖 **Full format specification**: [BVGraph format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bvgraph)
 
 ---
 
 ## Output Formats
 
+This tool produces two output formats:
+
 ### MTX (Matrix Market)
 
-Standard text-based sparse matrix format ([NIST spec](https://math.nist.gov/MatrixMarket/formats.html)). Node IDs are **1-indexed**.
+A standard text-based sparse matrix format. Each line is a `source  destination` edge pair with **1-indexed** node IDs.
 
 ```
 %%MatrixMarket matrix coordinate pattern general
@@ -182,41 +133,16 @@ Standard text-based sparse matrix format ([NIST spec](https://math.nist.gov/Matr
 1	1
 1	2
 2	2
-3	3
-3	4
 ...
 ```
 
-- Line 1: Format header
-- Line 2: `rows cols nonzeros`
-- Remaining lines: `source_node  destination_node` (tab-separated)
+📖 **Full format specification**: [MTX format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/mtx)
 
 ### BGR (Binary Graph Representation)
 
-Compact binary CSR (Compressed Sparse Row) format with adaptive integer sizes.
+A compact binary CSR (Compressed Sparse Row) format with adaptive integer sizes (uint32/uint64), a 1-byte header with bit flags, and parallel-friendly I/O layout. Unweighted graphs store only `row_ptr` and `col_idx` arrays with **0-indexed** node IDs.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│ Header Flags (1 byte)                                    │
-├──────────────────────────────────────────────────────────┤
-│ numNodes (4 or 8 bytes)                                  │
-├──────────────────────────────────────────────────────────┤
-│ numEdges (4 or 8 bytes)                                  │
-├──────────────────────────────────────────────────────────┤
-│ row_ptr[numNodes] — end offsets into col_idx             │
-├──────────────────────────────────────────────────────────┤
-│ col_idx[numEdges] — destination node IDs (0-indexed)     │
-└──────────────────────────────────────────────────────────┘
-```
-
-Header flags (1 byte):
-- Bit 0: `nodeU64` — 0 = uint32, 1 = uint64 for node IDs
-- Bit 1: `edgeU64` — 0 = uint32, 1 = uint64 for edge counts
-- Bit 3: `weighted` — 0 = unweighted, 1 = float32 weights appended
-
-All values are **little-endian**. `row_ptr` uses edge-sized elements; `col_idx` uses node-sized elements.
-
-The full BGR format specification is in `docs/bgr_format.md` (also at `/export/graphs/bgr/docs/bgr_format.md`).
+📖 **Full format specification**: [BGR format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bgr)
 
 ---
 
@@ -381,21 +307,6 @@ wget -P data "$BASE_URL/$GRAPH/$GRAPH.graph"
 wget -P data "$BASE_URL/$GRAPH/$GRAPH.properties"
 ```
 
-### Available Datasets (selected)
-
-| Graph | Nodes | Arcs | `.graph` size |
-|-------|------:|-----:|--------------:|
-| cnr-2000 | 325,557 | 3,216,152 | 1.2 MB |
-| eu-2005 | 862,664 | 19,235,140 | 8.6 MB |
-| in-2004 | 1,382,908 | 16,917,053 | 4.4 MB |
-| uk-2007-05@100000 | 100,000 | 3,050,615 | 758 KB |
-| indochina-2004 | 7,414,866 | 194,109,311 | 34 MB |
-| uk-2002 | 18,520,486 | 298,113,762 | ~80 MB |
-| arabic-2005 | 22,744,080 | 639,999,458 | ~130 MB |
-| it-2004 | 41,291,594 | 1,150,725,436 | ~250 MB |
-| sk-2005 | 50,636,154 | 1,949,412,601 | ~470 MB |
-| uk-2014 | 787,801,471 | 47,614,527,250 | ~6 GB |
-
 ### Full Pipeline Example
 
 ```bash
@@ -439,25 +350,6 @@ wget -P data http://data.law.di.unimi.it/webdata/indochina-2004/indochina-2004.p
 | uk-2007-05@100K | 0.10s | 0.42s | 0.03s | 0.20s |
 
 C++ is consistently **2–6× faster** than Java.
-
----
-
-## GitHub Pages Setup
-
-This documentation is designed to be published as a GitHub Pages site.
-
-### How to enable it
-
-1. Push the `docs/` folder to the `main` branch (merge the PR)
-2. Go to your repository on GitHub
-3. Click **Settings** → **Pages** (left sidebar)
-4. Under **Source**, select:
-   - **Branch**: `main`
-   - **Folder**: `/docs`
-5. Click **Save**
-6. Your site will be live at: `https://hpc-heterogeneous-graph-algorithms.github.io/graph-format-converters/`
-
-The site uses the Jekyll **Cayman** theme automatically.
 
 ---
 

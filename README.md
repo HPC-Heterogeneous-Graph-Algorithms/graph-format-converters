@@ -106,25 +106,12 @@ wget -P data http://data.law.di.unimi.it/webdata/indochina-2004/indochina-2004.p
 
 ## Output Formats
 
-### MTX (Matrix Market)
+| Format | Type | Node IDs | Details |
+|--------|------|----------|---------|
+| **MTX** | Text (Matrix Market) | 1-indexed | [MTX format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/mtx) |
+| **BGR** | Binary (CSR) | 0-indexed | [BGR format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bgr) |
 
-Standard text-based sparse matrix format. 1-indexed node IDs.
-
-```
-%%MatrixMarket matrix coordinate pattern general
-862664 862664 19235140
-1    1
-1    2
-2    2
-...
-```
-
-### BGR (Binary Graph Representation)
-
-Compact binary CSR format. See [`docs/`](docs/) for the full specification. Key features:
-- Adaptive integer sizes (uint32 or uint64 based on graph dimensions)
-- Single header byte with bit flags
-- Parallel-friendly I/O layout
+Input BVGraph format documentation: [BVGraph format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bvgraph)
 
 ## Build
 
