@@ -35,4 +35,5 @@
 ./data/*
 data/*
 .vscode/*
-jlibs/*
+jlibs/*bvgraph_to_mtx
+bvgraph_to_bgr
