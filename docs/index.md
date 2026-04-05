@@ -1,9 +1,10 @@
 ---
 layout: default
-title: Graph Format Converters — Documentation
+title: Home
+nav_order: 1
 ---
 
-# Graph Format Converters — Documentation
+# Graph Format Converters
 
 Convert [WebGraph BVGraph](https://webgraph.di.unimi.it/) compressed graphs from the [LAW dataset collection](http://law.di.unimi.it/datasets.php) into **MTX** and **BGR** formats using multi-threaded C++ or Java.
 
