@@ -43,12 +43,12 @@ Convert [WebGraph BVGraph](https://webgraph.di.unimi.it/) compressed graphs from
         C++ Pipeline          Java Pipeline
         (no Java needed)      (JDK 15+ required)
               │                     │
-     ┌────────┴────────┐    ┌───────┴───────┐
-     │                 │    │               │
- bvgraph_gen_offsets   │    │               │
-     │ (generates      │    │               │
-     │  .offsets)      │    │               │
-     │                 │    │               │
+     ┌────────┴────────┐        ┌───┴───────┐
+     │                 │        │           │
+ bvgraph_gen_offsets   │        │           │
+     │ (generates      │        │           │
+     │  .offsets)      │        │           │
+     │                 │        │           │
 bvgraph_to_mt bvgraph_to_bgr WG2MTX       WG2BGR
      │                 │        │           │
      ▼                 ▼        ▼           ▼
