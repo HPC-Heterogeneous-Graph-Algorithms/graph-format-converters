@@ -37,3 +37,4 @@ data/*
 .vscode/*
 jlibs/*bvgraph_to_mtx
 bvgraph_to_bgr
+bvgraph_gen_offsets
