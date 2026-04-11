@@ -2,11 +2,17 @@
 layout: default
 title: Home
 nav_order: 1
+permalink: /
 ---
 
 # Graph Format Converters
+{: .fs-9 .fw-700 }
 
 Convert [WebGraph BVGraph](https://webgraph.di.unimi.it/) compressed graphs from the [LAW dataset collection](http://law.di.unimi.it/datasets.php) into **MTX** and **BGR** formats using multi-threaded C++ or Java.
+{: .fs-5 .fw-300 }
+
+[Get Started →](#installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Graph Formats →](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/){: .btn .btn-outline .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
@@ -116,7 +122,7 @@ The `.offsets` file can be generated from the other two:
 # or: java -cp jlibs/*: it.unimi.dsi.webgraph.BVGraph data/eu-2005 -O
 ```
 
-📖 **Full format specification**: [BVGraph format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bvgraph)
+📖 **Full format specification**: [BVGraph format details](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/bvgraph)
 
 ---
 
@@ -137,13 +143,13 @@ A standard text-based sparse matrix format. Each line is a `source  destination`
 ...
 ```
 
-📖 **Full format specification**: [MTX format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/mtx)
+📖 **Full format specification**: [MTX format details](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/mtx)
 
 ### BGR (Binary Graph Representation)
 
 A compact binary CSR (Compressed Sparse Row) format with adaptive integer sizes (uint32/uint64), a 1-byte header with bit flags, and parallel-friendly I/O layout. Unweighted graphs store only `row_ptr` and `col_idx` arrays with **0-indexed** node IDs.
 
-📖 **Full format specification**: [BGR format details](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bgr)
+📖 **Full format specification**: [BGR format details](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/bgr)
 
 ---
 

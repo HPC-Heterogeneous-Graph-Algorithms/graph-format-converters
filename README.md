@@ -108,10 +108,10 @@ wget -P data http://data.law.di.unimi.it/webdata/indochina-2004/indochina-2004.p
 
 | Format | Type | Node IDs | Details |
 |--------|------|----------|---------|
-| **MTX** | Text (Matrix Market) | 1-indexed | [MTX format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/mtx) |
-| **BGR** | Binary (CSR) | 0-indexed | [BGR format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bgr) |
+| **MTX** | Text (Matrix Market) | 1-indexed | [MTX format spec](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/mtx) |
+| **BGR** | Binary (CSR) | 0-indexed | [BGR format spec](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/bgr) |
 
-Input BVGraph format documentation: [BVGraph format spec](https://hpc-heterogeneous-graph-algorithms.github.io/graph-formats/bvgraph)
+Input BVGraph format documentation: [BVGraph format spec](https://hpc-heterogeneous-graph-algorithms.github.io/Graph-Formats/bvgraph)
 
 ## Build
 
